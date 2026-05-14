@@ -66,7 +66,8 @@ Kafka Security Tests
 1. First generate SSL certificates::
 
         cd /path/to/kafka/
-        KAFKA_CERT_HOSTNAME=192.168.1.100 KAFKA_CERT_IP=192.168.1.100 bash /path/to/ceph/src/test/rgw/bucket_notification/kafka-security.sh
+        KAFKA_CERT_HOSTNAME=192.168.1.100 KAFKA_CERT_IP=192.168.1.100 KAFKA_CLIENT_CN=rgw-client KAFKA_CLIENT_KEY_PASSWORD=hunter2 \ 
+        bash /path/to/ceph/src/test/rgw/bucket_notification/kafka-security.sh
    
    Replace ``192.168.1.100`` with your actual Kafka broker's IP address or hostname.
 
@@ -87,12 +88,14 @@ Kafka Security Tests
         advertised.listeners=PLAINTEXT://localhost:9092,SSL://localhost:9093,SASL_SSL://localhost:9094,SASL_PLAINTEXT://localhost:9095
         listener.security.protocol.map=PLAINTEXT:PLAINTEXT,SSL:SSL,SASL_SSL:SASL_SSL,SASL_PLAINTEXT:SASL_PLAINTEXT
 
-        # SSL configuration matching the kafka-security.sh script
+        # SSL configuration
         ssl.keystore.location=./server.keystore.jks
         ssl.keystore.password=mypassword
         ssl.key.password=mypassword
         ssl.truststore.location=./server.truststore.jks
         ssl.truststore.password=mypassword
+
+        listener.name.ssl.ssl.client.auth=requested
 
         # SASL mechanisms
         sasl.enabled.mechanisms=PLAIN,SCRAM-SHA-256,SCRAM-SHA-512
@@ -141,7 +144,14 @@ Kafka Security Tests
 5. Run the tests::
 
         cd /path/to/ceph
-        KAFKA_DIR=/path/to/kafka BNTESTS_CONF=/path/to/bntests.conf python -m pytest -s /path/to/ceph/src/test/rgw/bucket_notification/test_bn.py -v -m 'kafka_security_test'
+        KAFKA_DIR=/path/to/kafka BNTESTS_CONF=/path/to/bntests.conf RGW_KAFKA_SSL_KEY_PASSWORD=hunter2 python -m pytest -s /path/to/ceph/src/test/rgw/bucket_notification/test_bn.py -v -m 'kafka_security_test'
+
+   Env var roles for the mTLS test:
+
+   ``RGW_KAFKA_SSL_KEY_PASSWORD``: required; the passphrase used when
+     generating ``client.key`` (default ``hunter2`` in ``kafka-security.sh``).
+   ``RGW_KAFKA_SSL_CERTIFICATE_LOCATION`` / ``RGW_KAFKA_SSL_KEY_LOCATION``:
+     optional. Default to ``$KAFKA_DIR/client.crt`` and ``$KAFKA_DIR/client.key`` respectively.
 
 ==============
 RabbitMQ Tests

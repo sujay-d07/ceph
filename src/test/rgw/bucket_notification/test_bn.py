@@ -4650,7 +4650,9 @@ def test_topic_no_permissions():
 
 
 def kafka_security(security_type, mechanism='PLAIN', use_topic_attrs_for_creds=False,
-                   verify_ssl=True, include_ca_location=True):
+                   verify_ssl=True, include_ca_location=True,
+                   ssl_certificate_location=None, ssl_key_location=None,
+                   ssl_key_password=None, use_mtls=False):
     """ test pushing kafka notification securly to master """
     # Setup SCRAM users if needed
     if mechanism.startswith('SCRAM'):
@@ -4684,6 +4686,36 @@ def kafka_security(security_type, mechanism='PLAIN', use_topic_attrs_for_creds=F
         endpoint_args = 'push-endpoint='+endpoint_address+'&kafka-ack-level=broker&use-ssl=true&mechanism='+mechanism
         if include_ca_location:
             endpoint_args += '&ca-location='+KAFKA_DIR+'/y-ca.crt'
+        if use_topic_attrs_for_creds:
+            endpoint_args += '&user-name=alice&password=alice-secret'
+    elif security_type == 'SSL' and use_mtls:
+        KAFKA_DIR = os.environ.get('KAFKA_DIR')
+        if not KAFKA_DIR:
+            pytest.skip('KAFKA_DIR environment variable is not set')
+
+        if ssl_certificate_location is None:
+            ssl_certificate_location = os.environ.get(
+                'RGW_KAFKA_SSL_CERTIFICATE_LOCATION',
+                os.path.join(KAFKA_DIR, 'client.crt'))
+        if ssl_key_location is None:
+            ssl_key_location = os.environ.get(
+                'RGW_KAFKA_SSL_KEY_LOCATION',
+                os.path.join(KAFKA_DIR, 'client.key'))
+        if ssl_key_password is None:
+            ssl_key_password = os.environ.get('RGW_KAFKA_SSL_KEY_PASSWORD')
+
+        if not os.path.exists(ssl_certificate_location):
+            pytest.skip('mTLS certificate file is not available: ' + ssl_certificate_location)
+        if not os.path.exists(ssl_key_location):
+            pytest.skip('mTLS key file is not available: ' + ssl_key_location)
+        if not ssl_key_password:
+            pytest.skip('RGW_KAFKA_SSL_KEY_PASSWORD environment variable is not set')
+
+        endpoint_args = 'push-endpoint='+endpoint_address+'&kafka-ack-level=broker&use-ssl=true'
+        endpoint_args += '&ssl-certificate-location=' + ssl_certificate_location
+        endpoint_args += '&ssl-key-location=' + ssl_key_location
+        endpoint_args += '&ssl-key-password=' + ssl_key_password
+        endpoint_args += '&ca-location='+KAFKA_DIR+'/y-ca.crt'
         if use_topic_attrs_for_creds:
             endpoint_args += '&user-name=alice&password=alice-secret'
     else:
@@ -4762,6 +4794,11 @@ def test_notification_kafka_security_ssl():
 @pytest.mark.kafka_security_test
 def test_notification_kafka_security_ssl_skip_verification_without_ca():
     kafka_security('SSL', verify_ssl=False, include_ca_location=False)
+
+
+@pytest.mark.kafka_security_test
+def test_notification_kafka_security_ssl_mtls():
+    kafka_security('SSL', use_mtls=True)
 
 
 @pytest.mark.kafka_security_test
