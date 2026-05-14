@@ -30,7 +30,9 @@ struct connection_id_t {
   std::string mechanism;
   bool ssl = false;
   bool verify_ssl = true;
-  std::string cert_location;
+  std::string ssl_certificate_location;
+  std::string ssl_key_location;
+  std::string ssl_key_password;
   connection_id_t() = default;
   connection_id_t(const std::string& _broker,
                   const std::string& _user,
@@ -39,7 +41,9 @@ struct connection_id_t {
                   const boost::optional<const std::string&>& _mechanism,
                   bool _ssl,
                   bool _verify_ssl,
-                  boost::optional<const std::string&> _cert_location);
+                  boost::optional<const std::string&> _ssl_certificate_location,
+                  boost::optional<const std::string&> _ssl_key_location,
+                  boost::optional<const std::string&> _ssl_key_password);
 };
 
 std::string to_string(const connection_id_t& id);
@@ -54,7 +58,9 @@ bool connect(connection_id_t& conn_id,
              boost::optional<const std::string&> user_name,
              boost::optional<const std::string&> password,
              boost::optional<const std::string&> brokers,
-             boost::optional<const std::string&> cert_location);
+             boost::optional<const std::string&> ssl_certificate_location,
+             boost::optional<const std::string&> ssl_key_location,
+             boost::optional<const std::string&> ssl_key_password);
 
 // publish a message over a connection that was already created
 int publish(const connection_id_t& conn_id,

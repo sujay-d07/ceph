@@ -236,7 +236,9 @@ and must be between 1 and 256 characters long. To relax these requirements, use:
    [&Attributes.entry.16.key=user-name&Attributes.entry.16.value=<user-name-string>]
    [&Attributes.entry.17.key=password&Attributes.entry.17.value=<password-string>]
    [&Attributes.entry.18.key=kafka-brokers&Attributes.entry.18.value=<kafka-broker-list>]
-   [&Attributes.entry.19.key=cert-location&Attributes.entry.19.value=<file-path>]
+   [&Attributes.entry.19.key=ssl-certificate-location&Attributes.entry.19.value=<file-path>]
+   [&Attributes.entry.20.key=ssl-key-location&Attributes.entry.20.value=<file-path>]
+   [&Attributes.entry.21.key=ssl-key-password&Attributes.entry.21.value=<passphrase>]
 
 Request parameters:
 
@@ -363,9 +365,15 @@ Request parameters:
  - ``kafka-brokers``: A comma-separated list of ``host:port`` of Kafka brokers:
    these brokers (may contain a broker which is defined in Kafka URI) will be
    added to Kafka URI to support sending notifications to a Kafka cluster.
- - cert-location: is used to enable mTLS with the Kafka broker.
-   If this is provided and a secure connection is used, the specified client 
-   certificate will be used to authenticate the client to the broker.
+ - ``ssl-certificate-location``: Path to the client's public certificate (PEM)
+   used to authenticate the client to the Kafka broker (mTLS). Only effective
+   when a secure connection is used (``use-ssl=true`` or ``kafka`` URI scheme).
+ - ``ssl-key-location``: Path to the client's private key (PEM) corresponding
+   to ``ssl-certificate-location``. Required when ``ssl-certificate-location``
+   is set; relying on the librdkafka fallback that reads the private key from
+   the certificate file is not supported.
+ - ``ssl-key-password``: Passphrase for the client's private key. Only needed
+   when the key file at ``ssl-key-location`` is encrypted.
 .. note::
 
     - The key-value pair of a specific parameter need not reside in the same
@@ -642,9 +650,14 @@ Valid ``AttributeName`` that can be passed:
   broker before being delivered to their final destinations.
 - ``kafka-brokers``: Set endpoint with broker(s) as a comma-separated list of
   ``host`` or ``host:port`` (default port 9092).
-  - cert-location: is used to enable mTLS with the Kafka broker.
-    If this is provided and a secure connection is used, the specified client
-    certificate will be used to authenticate the client to the broker.
+- ``ssl-certificate-location``: Path to the client's public certificate (PEM)
+  used to authenticate the client to the Kafka broker (mTLS). Only effective
+  when a secure connection is used.
+- ``ssl-key-location``: Path to the client's private key (PEM) corresponding
+  to ``ssl-certificate-location``. Required when ``ssl-certificate-location``
+  is set.
+- ``ssl-key-password``: Passphrase for the client's private key. Only needed
+  when the key file at ``ssl-key-location`` is encrypted.
 
 Notifications
 ~~~~~~~~~~~~~
